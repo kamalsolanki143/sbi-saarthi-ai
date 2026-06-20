@@ -1,417 +1,272 @@
 """
-SAARTHI AI — Digital Adoption Workflow Graph
-=============================================
-
-LangGraph sub-graph for the **MARGDARSHAN** agent's digital-adoption
-and account-services flow.
-
-Handles:
-• UPI activation and setup
-• YONO / internet-banking guidance
-• Fixed Deposit recommendations
-• Bill payments and recharges
-• Account services (passbook, cheque book, nominations)
-• Digital literacy and feature walkthroughs
-
-Pipeline
-────────
-1. ``validate_consent``        — block workflow if consent not granted.
-2. ``assess_digital_literacy`` — gauge the customer's comfort level with
-   digital banking (from persona + interaction history).
-3. ``generate_guidance``       — produce step-by-step instructions tailored
-   to the customer's literacy level.
-4. ``handle_transaction``      — if an actionable transaction is detected,
-   prepare a human-in-the-loop confirmation.
-5. ``finalise``                — timestamp and log.
-
-Routing rule: ``IntentCategory.DIGITAL_ADOPTION | BILL_PAYMENT |
-FD_RECOMMENDATION | ACCOUNT_SERVICES`` → this graph.
+SAARTHI AI — MARGDARSHAN Adoption Graph
+LangGraph StateGraph for the MARGDARSHAN (Digital Adoption) agent.
+Wraps the digital adoption workflow (salary credit, idle balance, UPI, YONO)
+into a compiled LangGraph graph.
 """
-
 from __future__ import annotations
 
-import logging
-from datetime import datetime, timezone
-from typing import Any
+from typing import TypedDict, Optional, Literal, Any
 
-from langgraph.graph import END, StateGraph
+from langgraph.graph import StateGraph, END
 
-from backend.models.state import (
-    AgentResponse,
-    AgentType,
-    ConsentCategory,
-    ConsentStatus,
-    GuardrailStatus,
-    HumanInLoopAction,
-    IntentCategory,
-    MemoryContext,
-    NetworkMode,
-    PersonaType,
-    SAARTHIState,
-)
-from backend.services.gemini_service import GeminiService, GeminiServiceError
+from backend.memory.customer_memory import customer_memory
+from backend.services.confidence_engine import confidence_engine
+from backend.guardrails.confidence_checker import check_confidence
+from backend.utils.error_handlers import LowConfidenceError
+from backend.guardrails.action_validator import validate_action
+from backend.services.audit_service import audit_service
+from backend.workflows.fallback_graph import run_fallback_graph, create_fallback_response
+from backend.utils.constants import AGENT_MARGDARSHAN, AGENT_FALLBACK
 
-# ─── Logger ─────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# State definition
+# ---------------------------------------------------------------------------
 
-logger = logging.getLogger("saarthi.workflows.adoption")
-
-# ─── Prompt templates ───────────────────────────────────────────────────────
-
-_ADOPTION_SYSTEM_PROMPT: str = (
-    "You are Margdarshan, the digital-adoption and account-services "
-    "specialist for State Bank of India.  You help customers navigate "
-    "digital banking services like YONO, UPI, Fixed Deposits, bill "
-    "payments, and account services.\n\n"
-    "Adapt your language complexity to the customer's digital literacy:\n"
-    "• LOW literacy  → very simple steps, use analogies, avoid jargon\n"
-    "• MEDIUM literacy → clear instructions with brief explanations\n"
-    "• HIGH literacy → concise, technical-friendly responses\n\n"
-    "Always provide numbered step-by-step instructions when guiding "
-    "through a process.  Offer to help in the customer's language."
-)
-
-_GUIDANCE_PROMPT_TEMPLATE: str = (
-    "Customer query: \"{query}\"\n"
-    "Language: {language}\n"
-    "Persona: {persona}\n"
-    "Digital literacy level: {literacy}\n"
-    "Intent: {intent}\n"
-    "Previous context: {context}\n\n"
-    "Provide helpful guidance for the customer's request.  If it "
-    "involves a transaction, include transaction details.\n\n"
-    "Return JSON:\n"
-    '{{\n'
-    '  "response": "<detailed conversational response>",\n'
-    '  "steps": ["<step 1>", "<step 2>"],\n'
-    '  "is_transaction": <true|false>,\n'
-    '  "transaction_type": "<bill_payment|recharge|upi_transfer|none>",\n'
-    '  "follow_up_questions": ["<question 1>"]\n'
-    '}}'
-)
-
-# ─── Digital literacy assessment ────────────────────────────────────────────
-
-_LITERACY_SIGNALS: dict[str, list[str]] = {
-    "high": [
-        "upi", "neft", "rtgs", "imps", "netbanking", "yono",
-        "internet banking", "mobile banking", "api", "otp",
-    ],
-    "medium": [
-        "app", "online", "phone pe", "google pay", "paytm",
-        "recharge", "bill pay", "transfer",
-    ],
-    "low": [
-        "kaise", "how to", "samajh nahi", "pata nahi",
-        "kya hai", "help", "batao", "sikhao",
-    ],
-}
+class AdoptionState(TypedDict, total=False):
+    customer_id: str
+    event: dict
+    event_type: str  # "salary_credit" | "idle_balance" | "upi_not_activated" | "yono_not_adopted" etc.
+    customer_context: dict
+    intent: str
+    confidence_score: float
+    recommendation: Optional[Any]
+    action_preview: Optional[Any]
+    status: str  # tracks pipeline stage for the audit trail
+    error: Optional[str]
 
 
-def _assess_literacy(query: str, memory: MemoryContext) -> str:
-    """
-    Determine the customer's digital literacy level from signals.
+# ---------------------------------------------------------------------------
+# Node functions
+# ---------------------------------------------------------------------------
 
-    Returns ``"low"``, ``"medium"``, or ``"high"``.
-    """
-    normalised = query.lower()
-    interaction_count = memory.interaction_count
-
-    # Score each level
-    scores: dict[str, int] = {"high": 0, "medium": 0, "low": 0}
-    for level, keywords in _LITERACY_SIGNALS.items():
-        for kw in keywords:
-            if kw in normalised:
-                scores[level] += 1
-
-    # Factor in interaction history
-    if interaction_count > 20:
-        scores["high"] += 2
-    elif interaction_count > 5:
-        scores["medium"] += 1
-    else:
-        scores["low"] += 1
-
-    # Persona-based boost
-    persona = memory.customer_profile.get("persona", "unknown")
-    if persona in ("senior_citizen", "farmer"):
-        scores["low"] += 2
-    elif persona == "student":
-        scores["medium"] += 1
-
-    best = max(scores, key=lambda k: scores[k])
-    return best
+def load_memory_node(state: AdoptionState) -> AdoptionState:
+    """Pull shared customer memory before doing anything else."""
+    context = customer_memory.get_customer_context(state["customer_id"])
+    customer_memory.set_last_agent(state["customer_id"], AGENT_MARGDARSHAN)
+    
+    audit_service.log_step(
+        customer_id=state["customer_id"],
+        step="memory_evaluation",
+        agent=AGENT_MARGDARSHAN,
+        metadata={"context_loaded": bool(context)},
+    )
+    return {**state, "customer_context": context, "status": "memory_evaluated"}
 
 
-# ─── Transactional intents ──────────────────────────────────────────────────
-
-_TRANSACTION_INTENTS: set[IntentCategory] = {
-    IntentCategory.BILL_PAYMENT,
-    IntentCategory.FUND_TRANSFER,
-}
-
-
-# ─── Graph node functions ──────────────────────────────────────────────────
-
-
-def _validate_consent_node(state: SAARTHIState) -> SAARTHIState:
-    """
-    Verify mandatory consents before proceeding with digital adoption.
-    """
-    consent: ConsentStatus = state.get("consent_status", ConsentStatus())
-
-    if not consent.is_granted(ConsentCategory.MEMORY_CONSENT):
-        logger.warning(
-            "Adoption consent check — memory consent missing",
-            extra={"customer_id": state.get("customer_id")},
-        )
-        state["response"] = (
-            "To help you with digital banking services, I need your "
-            "permission to store your information securely.  Would you "
-            "like to grant consent?  Your data will be handled as per "
-            "DPDP Act guidelines."
-        )
-        state["guardrail_status"] = GuardrailStatus.PASSED
-    else:
-        logger.info(
-            "Adoption consent validated",
-            extra={"customer_id": state.get("customer_id")},
-        )
-
-    return state
+async def check_confidence_node(state: AdoptionState) -> AdoptionState:
+    """Evaluate intent confidence for the incoming event."""
+    result = await confidence_engine.evaluate_event(
+        event_type=state["event_type"],
+        source=state["event"].get("source", "webhook"),
+    )
+    
+    audit_service.log_step(
+        customer_id=state["customer_id"],
+        step="confidence_check",
+        agent=AGENT_MARGDARSHAN,
+        metadata={"score": result.confidence},
+    )
+    return {
+        **state,
+        "confidence_score": result.confidence,
+        "status": "confidence_evaluated",
+    }
 
 
-def _assess_literacy_node(state: SAARTHIState) -> SAARTHIState:
-    """Assess the customer's digital literacy level."""
-    memory: MemoryContext = state.get("memory_context", MemoryContext())
-    query: str = state.get("query", "")
+def route_on_confidence(state: AdoptionState) -> Literal["proceed", "fallback"]:
+    """Conditional edge: confidence >= threshold -> proceed, else -> fallback."""
+    from backend.guardrails.confidence_checker import assert_confidence
+    try:
+        assert_confidence(state["confidence_score"], state["customer_id"])
+        return "proceed"
+    except LowConfidenceError:
+        return "fallback"
 
-    literacy_level = _assess_literacy(query, memory)
 
-    # Store in agent_response metadata for downstream use
-    logger.info(
-        "Digital literacy assessed",
-        extra={
-            "customer_id": state.get("customer_id"),
-            "literacy": literacy_level,
-        },
+def fallback_node(state: AdoptionState) -> AdoptionState:
+    """Low confidence path — defer to the existing fallback graph (clarifying question)."""
+    audit_service.log_step(
+        customer_id=state["customer_id"],
+        step="low_confidence_fallback",
+        agent=AGENT_MARGDARSHAN,
+        metadata={"score": state["confidence_score"]},
+    )
+    
+    fallback_result = run_fallback_graph(state["customer_id"], state["event"])
+    clarifying_question = fallback_result.get("clarifying_question", "Maaf kijiye, main samajh nahi paaya. Kya aap thoda aur clearly bata sakte hain?")
+    quick_reply_options = fallback_result.get("quick_reply_options", [])
+
+    fallback_response = create_fallback_response(
+        customer_id=state["customer_id"],
+        agent=AGENT_FALLBACK,
+        confidence=state["confidence_score"],
+        clarifying_question=clarifying_question,
+        quick_reply_options=quick_reply_options,
+        session_id=state["event"].get("event_id", ""),
     )
 
-    # Temporarily stash literacy in memory behavioral_context
-    if hasattr(memory, "behavioral_context"):
-        memory.behavioral_context["digital_literacy"] = literacy_level
-        state["memory_context"] = memory
+    return {
+        **state,
+        "recommendation": fallback_response,
+        "status": "fallback_triggered",
+        "error": None,
+        "action_preview": None,
+    }
 
-    return state
 
-
-async def _generate_guidance_node(
-    state: SAARTHIState,
-    gemini_service: GeminiService,
-) -> SAARTHIState:
-    """Generate tailored digital-banking guidance."""
-    memory: MemoryContext = state.get("memory_context", MemoryContext())
-    persona = state.get("persona", PersonaType.UNKNOWN)
-    persona_str = persona.value if hasattr(persona, "value") else str(persona)
-    intent = state.get("intent", IntentCategory.GENERAL_INQUIRY)
-    intent_str = intent.value if hasattr(intent, "value") else str(intent)
-    literacy = memory.behavioral_context.get("digital_literacy", "medium")
-
-    context_parts: list[str] = []
-    for turn in memory.conversation_history[-3:]:
-        content = turn.get("parts", turn.get("content", ""))
-        if content:
-            context_parts.append(content)
-
-    prompt = _GUIDANCE_PROMPT_TEMPLATE.format(
-        query=state.get("query", ""),
-        language=state.get("language", "en"),
-        persona=persona_str,
-        literacy=literacy,
-        intent=intent_str,
-        context="; ".join(context_parts) if context_parts else "none",
+async def generate_recommendation_node(state: AdoptionState) -> AdoptionState:
+    """Dispatch to the correct Margdarshan handler based on event_type."""
+    from backend.utils import json_repository as repo
+    from backend.agents.margdarshan_agent import _handle_fd_opportunity, _handle_upi_activation, _handle_yono_adoption
+    from backend.models.event import Event
+    from backend.utils.constants import (
+        EVENT_SALARY_CREDIT,
+        EVENT_IDLE_BALANCE,
+        EVENT_FD_ELIGIBLE,
+        EVENT_SUBSIDY_CREDIT,
+        EVENT_UPI_NOT_ACTIVATED,
+        EVENT_YONO_NOT_ADOPTED,
     )
+
+    customer_record = repo.find_by_id("customers", "customer_id", state["customer_id"])
+    if not customer_record:
+        return {**state, "error": "Customer not found", "status": "error"}
+
+    event_obj = Event(**state["event"])
+    event_type = state["event_type"]
 
     try:
-        result: dict[str, Any] = await gemini_service.generate_structured(
-            prompt=prompt,
-            system_instruction=_ADOPTION_SYSTEM_PROMPT,
-            temperature=0.4,
-            network_mode=state.get("network_mode", NetworkMode.TEXT_MODE),
-        )
-
-        response_text: str = result.get("response", "")
-        steps: list[str] = result.get("steps", [])
-        is_transaction: bool = result.get("is_transaction", False)
-        transaction_type: str = result.get("transaction_type", "none")
-        follow_ups: list[str] = result.get("follow_up_questions", [])
-
-        # Format steps into response if present
-        if steps and response_text:
-            steps_text = "\n".join(f"  {i+1}. {s}" for i, s in enumerate(steps))
-            response_text = f"{response_text}\n\n📋 Steps:\n{steps_text}"
-
-        state["response"] = response_text
-
-        agent_response = AgentResponse(
-            agent=AgentType.MARGDARSHAN,
-            response_text=response_text,
-            follow_up_questions=follow_ups,
-            confidence=state.get("confidence", 0.0),
-            metadata={
-                "digital_literacy": literacy,
-                "is_transaction": is_transaction,
-                "transaction_type": transaction_type,
-            },
-        )
-
-        # Prepare human-in-the-loop for transactions
-        if is_transaction and transaction_type != "none":
-            agent_response.action_required = HumanInLoopAction(
-                action_type=transaction_type,
-                action_preview={
-                    "type": transaction_type,
-                    "message": "Please confirm this transaction.",
-                },
-                requires_human_confirmation=True,
-                requires_mpin=transaction_type in ("upi_transfer", "bill_payment"),
-            )
-            state["action_required"] = agent_response.action_required
-
-        state["agent_response"] = agent_response
-
-    except GeminiServiceError as exc:
-        logger.error(
-            "Adoption guidance LLM call failed",
-            extra={"error": str(exc)},
-        )
-        state["response"] = (
-            "I'm here to help you with digital banking!  Could you "
-            "please tell me specifically what you'd like to do?  "
-            "For example:\n"
-            "• Pay a bill\n"
-            "• Transfer money\n"
-            "• Learn how to use YONO app\n"
-            "• Check a complaint status"
-        )
-        state["agent_response"] = AgentResponse(
-            agent=AgentType.MARGDARSHAN,
-            response_text=state["response"],
-            confidence=state.get("confidence", 0.0),
-        )
-
-    return state
-
-
-def _should_handle_transaction(state: SAARTHIState) -> str:
-    """Conditional edge: route to transaction handler if needed."""
-    action = state.get("action_required")
-    if action is not None:
-        return "handle_transaction"
-    return "finalise"
-
-
-def _handle_transaction_node(state: SAARTHIState) -> SAARTHIState:
-    """
-    Prepare transaction confirmation payload.
-
-    Adds security notices and MPIN/biometric requirements to the
-    response when a financial transaction is detected.
-    """
-    action = state.get("action_required")
-    if action is not None:
-        current_response = state.get("response", "")
-
-        security_notice = "\n\n🔒 "
-        if action.requires_mpin:
-            security_notice += (
-                "This transaction requires your MPIN for verification.  "
-                "You'll be redirected to the secure payment page."
-            )
-        elif action.requires_biometric:
-            security_notice += (
-                "Please verify using your fingerprint or face ID "
-                "to proceed."
-            )
+        if event_type in (EVENT_SALARY_CREDIT, EVENT_IDLE_BALANCE, EVENT_FD_ELIGIBLE, EVENT_SUBSIDY_CREDIT):
+            recommendation = await _handle_fd_opportunity(customer_record, event_obj)
+        elif event_type == EVENT_UPI_NOT_ACTIVATED:
+            recommendation = _handle_upi_activation(customer_record, event_obj)
+        elif event_type == EVENT_YONO_NOT_ADOPTED:
+            recommendation = _handle_yono_adoption(customer_record, event_obj)
         else:
-            security_notice += (
-                "Please review and confirm the transaction details."
-            )
+            recommendation = await _handle_fd_opportunity(customer_record, event_obj)
 
-        state["response"] = f"{current_response}{security_notice}"
+        audit_service.log_step(
+            customer_id=state["customer_id"],
+            step="recommendation_generated",
+            agent=AGENT_MARGDARSHAN,
+            metadata={"product_type": recommendation.product_type},
+        )
+        return {**state, "recommendation": recommendation, "status": "recommendation_generated"}
 
-        logger.info(
-            "Transaction action prepared",
-            extra={
-                "customer_id": state.get("customer_id"),
-                "action_type": action.action_type,
-                "requires_mpin": action.requires_mpin,
+    except Exception as e:
+        audit_service.log_step(
+            customer_id=state["customer_id"],
+            step="recommendation_error",
+            agent=AGENT_MARGDARSHAN,
+            metadata={"reason": str(e)},
+        )
+        return {**state, "error": str(e), "status": "error"}
+
+
+def validate_action_node(state: AdoptionState) -> AdoptionState:
+    """Pydantic/guardrail validation before building the Action Preview."""
+    if state.get("error") or not state.get("recommendation"):
+        return state
+
+    recommendation = state["recommendation"]
+    validated_action = validate_action(recommendation.action_preview, state["customer_id"])
+    
+    audit_service.log_step(
+        customer_id=state["customer_id"],
+        step="pydantic_validation",
+        agent=AGENT_MARGDARSHAN,
+        metadata={"validated": True},
+    )
+    return {**state, "action_preview": validated_action, "status": "action_validated"}
+
+
+def build_action_preview_node(state: AdoptionState) -> AdoptionState:
+    """Final node: surface the action preview, ready for MPIN/biometric gate downstream."""
+    if state.get("error"):
+        return state
+
+    # Register with human-in-the-loop gate
+    from backend.security.human_in_loop import human_in_loop_gate
+    recommendation = state.get("recommendation")
+    if recommendation:
+        human_in_loop_gate.register_recommendation(
+            recommendation_id=recommendation.recommendation_id,
+            customer_id=state["customer_id"],
+        )
+        
+        # Save to _recommendation_store
+        from backend.routes.recommendation import store_recommendation
+        store_recommendation(recommendation.model_dump(mode="json"))
+
+    audit_service.log_step(
+        customer_id=state["customer_id"],
+        step="action_preview_ready",
+        agent=AGENT_MARGDARSHAN,
+        metadata={"action_preview": state.get("action_preview").model_dump(mode="json") if state.get("action_preview") else None},
+    )
+    return {**state, "status": "action_preview_ready"}
+
+
+# ---------------------------------------------------------------------------
+# Graph assembly
+# ---------------------------------------------------------------------------
+
+def build_adoption_graph():
+    try:
+        from langgraph.graph import StateGraph, END
+        
+        graph = StateGraph(AdoptionState)
+
+        graph.add_node("load_memory", load_memory_node)
+        graph.add_node("check_confidence", check_confidence_node)
+        graph.add_node("fallback", fallback_node)
+        graph.add_node("generate_recommendation", generate_recommendation_node)
+        graph.add_node("validate_action", validate_action_node)
+        graph.add_node("build_action_preview", build_action_preview_node)
+
+        graph.set_entry_point("load_memory")
+        graph.add_edge("load_memory", "check_confidence")
+
+        graph.add_conditional_edges(
+            "check_confidence",
+            route_on_confidence,
+            {
+                "proceed": "generate_recommendation",
+                "fallback": "fallback",
             },
         )
 
-    return state
+        graph.add_edge("generate_recommendation", "validate_action")
+        graph.add_edge("validate_action", "build_action_preview")
+        graph.add_edge("build_action_preview", END)
+        graph.add_edge("fallback", END)
+
+        return graph.compile()
+        
+    except ImportError:
+        logger = get_logger(__name__)
+        logger.warning("langgraph_not_installed", note="Adoption graph running in stub mode")
+        return None
 
 
-def _finalise_node(state: SAARTHIState) -> SAARTHIState:
-    """Final state cleanup."""
-    state["timestamp"] = datetime.now(timezone.utc)
-    logger.info(
-        "Adoption workflow (MARGDARSHAN) completed",
-        extra={
-            "customer_id": state.get("customer_id"),
-            "has_action": state.get("action_required") is not None,
-        },
-    )
-    return state
+# Compiled graph instance, importable by orchestrator.py
+adoption_graph = build_adoption_graph()
 
 
-# ─── Graph builder ──────────────────────────────────────────────────────────
-
-
-def build_adoption_graph(
-    gemini_service: GeminiService,
-) -> StateGraph:
+async def run_adoption_graph(customer_id: str, event: dict) -> dict:
     """
-    Construct the digital-adoption LangGraph sub-graph.
+    Entry point called by agents/orchestrator.py for any Margdarshan-routed event.
 
-    Parameters
-    ----------
-    gemini_service : GeminiService
-        Shared Gemini API client.
-
-    Returns
-    -------
-    StateGraph
-        Compiled graph ready for invocation.
+    event must include an "event_type" key matching one of:
+    "salary_credit" | "idle_balance" | "upi_not_activated" | "yono_not_adopted"
     """
-
-    async def generate_guidance(state: SAARTHIState) -> SAARTHIState:
-        return await _generate_guidance_node(state, gemini_service)
-
-    graph = StateGraph(SAARTHIState)
-
-    # ── Add nodes ──────────────────────────────────────────────────────
-    graph.add_node("validate_consent", _validate_consent_node)
-    graph.add_node("assess_literacy", _assess_literacy_node)
-    graph.add_node("generate_guidance", generate_guidance)
-    graph.add_node("handle_transaction", _handle_transaction_node)
-    graph.add_node("finalise", _finalise_node)
-
-    # ── Set entry point ────────────────────────────────────────────────
-    graph.set_entry_point("validate_consent")
-
-    # ── Add edges ──────────────────────────────────────────────────────
-    graph.add_edge("validate_consent", "assess_literacy")
-    graph.add_edge("assess_literacy", "generate_guidance")
-    graph.add_conditional_edges(
-        "generate_guidance",
-        _should_handle_transaction,
-        {
-            "handle_transaction": "handle_transaction",
-            "finalise": "finalise",
-        },
-    )
-    graph.add_edge("handle_transaction", "finalise")
-    graph.add_edge("finalise", END)
-
-    logger.info("Adoption graph built")
-    return graph
+    initial_state: AdoptionState = {
+        "customer_id": customer_id,
+        "event": event,
+        "event_type": event.get("event_type", ""),
+        "status": "started",
+    }
+    if adoption_graph:
+        return await adoption_graph.ainvoke(initial_state)
+    return initial_state

@@ -1,0 +1,88 @@
+{
+  "transactions": [
+    {
+      "transaction_id": "TXN001",
+      "customer_id": "CUST001",
+      "amount": 55000.00,
+      "transaction_type": "credit",
+      "merchant": "ABC Corp Pvt Ltd",
+      "category": "salary",
+      "timestamp": "2024-06-01T10:15:00Z",
+      "balance_after": 83000.00,
+      "channel": "NEFT",
+      "description": "Salary June 2024"
+    },
+    {
+      "transaction_id": "TXN002",
+      "customer_id": "CUST001",
+      "amount": 12000.00,
+      "transaction_type": "debit",
+      "merchant": "DLF Mall",
+      "category": "shopping",
+      "timestamp": "2024-06-05T14:30:00Z",
+      "balance_after": 71000.00,
+      "channel": "POS",
+      "description": "Shopping"
+    },
+    {
+      "transaction_id": "TXN003",
+      "customer_id": "CUST001",
+      "amount": 8500.00,
+      "transaction_type": "debit",
+      "merchant": "Indian Oil",
+      "category": "fuel",
+      "timestamp": "2024-06-07T09:00:00Z",
+      "balance_after": 62500.00,
+      "channel": "UPI",
+      "description": "Fuel"
+    },
+    {
+      "transaction_id": "TXN004",
+      "customer_id": "CUST002",
+      "amount": 15000.00,
+      "transaction_type": "credit",
+      "merchant": "Ministry of Education",
+      "category": "scholarship",
+      "timestamp": "2024-06-01T11:00:00Z",
+      "balance_after": 26000.00,
+      "channel": "PFMS",
+      "description": "PM Scholarship Q2 2024"
+    },
+    {
+      "transaction_id": "TXN005",
+      "customer_id": "CUST003",
+      "amount": 85000.00,
+      "transaction_type": "credit",
+      "merchant": "Various Customers",
+      "category": "business_income",
+      "timestamp": "2024-06-10T18:00:00Z",
+      "balance_after": 125000.00,
+      "channel": "NEFT",
+      "description": "Business Collections June"
+    },
+    {
+      "transaction_id": "TXN006",
+      "customer_id": "CUST004",
+      "amount": 6000.00,
+      "transaction_type": "credit",
+      "merchant": "PM-KISAN",
+      "category": "subsidy",
+      "timestamp": "2024-06-15T08:00:00Z",
+      "balance_after": 8200.00,
+      "channel": "DBT",
+      "description": "PM-KISAN Installment June 2024"
+    },
+    {
+      "transaction_id": "TXN007",
+      "customer_id": "CUST005",
+      "amount": 55000.00,
+      "transaction_type": "credit",
+      "merchant": "EPFO",
+      "category": "pension",
+      "timestamp": "2024-06-01T09:00:00Z",
+      "balance_after": 280000.00,
+      "channel": "NEFT",
+      "description": "Pension June 2024"
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "personas": [
+    {
+      "persona_id": "PER001",
+      "persona_type": "farmer",
+      "display_name": "Kisan (Farmer)",
+      "description": "Agricultural workers, primarily rural. Receives PM-KISAN, PMFBY subsidies. Prefers voice interactions in regional languages. Key products: Jan Dhan, UPI, crop insurance guidance.",
+      "detection_signals": [
+        "subsidy_credit from PM-KISAN or state schemes",
+        "low account balance with seasonal spikes",
+        "rural address",
+        "jan_dhan account type",
+        "transactions at agri-input merchants"
+      ],
+      "preferred_language": "Hindi / Regional",
+      "preferred_channel": "voice",
+      "key_products": ["PROD001", "PROD003", "PROD004"],
+      "agent_priority": "margdarshan"
+    },
+    {
+      "persona_id": "PER002",
+      "persona_type": "student",
+      "display_name": "Vidyarthi (Student)",
+      "description": "Young customers aged 18–25. Scholarship recipients, education loan seekers. Digital-savvy. Key products: UPI, YONO, RD.",
+      "detection_signals": [
+        "scholarship or stipend credits",
+        "age < 25",
+        "education-related merchant transactions",
+        "irregular income pattern"
+      ],
+      "preferred_language": "English / Hindi",
+      "preferred_channel": "text",
+      "key_products": ["PROD002", "PROD003", "PROD005"],
+      "agent_priority": "saathi"
+    },
+    {
+      "persona_id": "PER003",
+      "persona_type": "merchant",
+      "display_name": "Vyapari (Merchant)",
+      "description": "Small business owners with current accounts. High transaction volumes. Key products: UPI QR, Current Account, FD for surplus.",
+      "detection_signals": [
+        "current account type",
+        "multiple daily credits from varied sources",
+        "high transaction volume",
+        "POS terminal usage"
+      ],
+      "preferred_language": "Hindi / English",
+      "preferred_channel": "text",
+      "key_products": ["PROD001", "PROD002", "PROD003"],
+      "agent_priority": "margdarshan"
+    },
+    {
+      "persona_id": "PER004",
+      "persona_type": "salaried",
+      "display_name": "Naukripeshaa (Salaried)",
+      "description": "Regular salaried employees with monthly salary credits. Most likely to have idle balance post-salary. Key products: FD, YONO, UPI.",
+      "detection_signals": [
+        "regular monthly salary credits",
+        "salary account type",
+        "EMI debit patterns",
+        "balance spike at month start"
+      ],
+      "preferred_language": "Hindi / English",
+      "preferred_channel": "text",
+      "key_products": ["PROD001", "PROD002", "PROD003"],
+      "agent_priority": "margdarshan"
+    },
+    {
+      "persona_id": "PER005",
+      "persona_type": "senior_citizen",
+      "display_name": "Varishtha Naagrik (Senior Citizen)",
+      "description": "Customers aged 60+. Pension recipients. Conservative investors. Need simplified UI and voice support. Key products: FD (senior citizen rate), YONO assistance.",
+      "detection_signals": [
+        "age > 60",
+        "pension credits",
+        "low transaction frequency",
+        "branch-based transactions"
+      ],
+      "preferred_language": "Hindi / Regional",
+      "preferred_channel": "voice",
+      "key_products": ["PROD001", "PROD002"],
+      "agent_priority": "margdarshan"
+    }
+  ]
+}
