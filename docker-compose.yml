@@ -1,0 +1,59 @@
+version: "3.9"
+
+# ============================================================
+# SAARTHI AI — Docker Compose
+# Services: FastAPI backend, Redis (session memory)
+# ChromaDB runs embedded (no separate container needed for hackathon)
+# ============================================================
+
+services:
+
+  # ── FastAPI Backend ────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: saarthi-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app/backend
+      - ./database:/app/database
+      - ./chroma_db:/app/chroma_db
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - saarthi-net
+
+  # ── Redis (short-term session memory) ─────────────────────
+  redis:
+    image: redis:7.2-alpine
+    container_name: saarthi-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - saarthi-net
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  saarthi-net:
+    driver: bridge

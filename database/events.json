@@ -1,0 +1,185 @@
+{
+  "events": [
+    {
+      "event_id": "EVT001",
+      "customer_id": "CUST001",
+      "event_type": "salary_credit",
+      "amount": 55000.0,
+      "metadata": {
+        "employer": "ABC Corp Pvt Ltd",
+        "transaction_id": "TXN001",
+        "month": "June 2024"
+      },
+      "source": "webhook",
+      "timestamp": "2024-06-01T10:15:00Z",
+      "processed": true,
+      "agent_assigned": "margdarshan",
+      "processing_result": "fd_recommendation_generated"
+    },
+    {
+      "event_id": "EVT002",
+      "customer_id": "CUST001",
+      "event_type": "idle_balance",
+      "amount": 45000.0,
+      "metadata": {
+        "idle_days": 30,
+        "balance_threshold": 20000
+      },
+      "source": "system",
+      "timestamp": "2024-06-19T08:00:00Z",
+      "processed": false,
+      "agent_assigned": null,
+      "processing_result": null
+    },
+    {
+      "event_id": "EVT003",
+      "customer_id": "CUST004",
+      "event_type": "subsidy_credit",
+      "amount": 6000.0,
+      "metadata": {
+        "scheme": "PM-KISAN",
+        "transaction_id": "TXN006"
+      },
+      "source": "webhook",
+      "timestamp": "2024-06-15T08:00:00Z",
+      "processed": false,
+      "agent_assigned": null,
+      "processing_result": null
+    },
+    {
+      "event_id": "EVT004",
+      "customer_id": "CUST006",
+      "event_type": "account_opened",
+      "amount": null,
+      "metadata": {
+        "account_type": "savings",
+        "branch": "Noida Sector 12"
+      },
+      "source": "system",
+      "timestamp": "2024-06-19T10:00:00Z",
+      "processed": false,
+      "agent_assigned": null,
+      "processing_result": null
+    },
+    {
+      "event_id": "EVT-AD95C9D1821C",
+      "customer_id": "CUST001",
+      "event_type": "salary_credit",
+      "amount": 55000.0,
+      "metadata": {},
+      "source": "webhook",
+      "timestamp": "2026-06-20T07:33:33.051975Z",
+      "processed": false,
+      "agent_assigned": "margdarshan",
+      "processing_result": null,
+      "status": "pending",
+      "created_at": "2026-06-20T07:33:33.051998+00:00",
+      "updated_at": "2026-06-20T07:33:33.051998+00:00"
+    },
+    {
+      "event_id": "EVT-0821DD18377E",
+      "customer_id": "CUST001",
+      "event_type": "salary_credit",
+      "amount": 55000.0,
+      "metadata": {},
+      "source": "webhook",
+      "timestamp": "2026-06-20T07:34:56.661259Z",
+      "processed": false,
+      "agent_assigned": "margdarshan",
+      "processing_result": null,
+      "status": "pending",
+      "created_at": "2026-06-20T07:34:56.661279+00:00",
+      "updated_at": "2026-06-20T07:34:56.661279+00:00"
+    },
+    {
+      "event_id": "EVT-E55D3E205748",
+      "customer_id": "CUST001",
+      "event_type": "salary_credit",
+      "amount": 55000.0,
+      "metadata": {},
+      "source": "webhook",
+      "timestamp": "2026-06-20T07:35:39.822195Z",
+      "processed": false,
+      "agent_assigned": "margdarshan",
+      "processing_result": null,
+      "status": "pending",
+      "created_at": "2026-06-20T07:35:39.822213+00:00",
+      "updated_at": "2026-06-20T07:35:39.822213+00:00"
+    },
+    {
+      "event_id": "EVT-7CE47C852931",
+      "customer_id": "CUST001",
+      "event_type": "salary_credit",
+      "amount": 55000.0,
+      "metadata": {},
+      "source": "webhook",
+      "timestamp": "2026-06-20T07:43:29.863299Z",
+      "processed": false,
+      "agent_assigned": "margdarshan",
+      "processing_result": null,
+      "status": "pending",
+      "created_at": "2026-06-20T07:43:29.863316+00:00",
+      "updated_at": "2026-06-20T07:43:29.863316+00:00"
+    },
+    {
+      "event_id": "EVT-10D000EB53A3",
+      "customer_id": "CUST001",
+      "event_type": "salary_credit",
+      "amount": 55000.0,
+      "metadata": {},
+      "source": "webhook",
+      "timestamp": "2026-06-20T07:49:38.579622Z",
+      "processed": false,
+      "agent_assigned": "margdarshan",
+      "processing_result": null,
+      "status": "pending",
+      "created_at": "2026-06-20T07:49:38.579643+00:00",
+      "updated_at": "2026-06-20T07:49:38.579643+00:00"
+    },
+    {
+      "event_id": "EVT-1039B25EABB2",
+      "customer_id": "CUST001",
+      "event_type": "salary_credit",
+      "amount": 55000.0,
+      "metadata": {},
+      "source": "webhook",
+      "timestamp": "2026-06-20T07:50:07.790126Z",
+      "processed": false,
+      "agent_assigned": "margdarshan",
+      "processing_result": null,
+      "status": "pending",
+      "created_at": "2026-06-20T07:50:07.790148+00:00",
+      "updated_at": "2026-06-20T07:50:07.790148+00:00"
+    },
+    {
+      "event_id": "EVT-E32486785D77",
+      "customer_id": "CUST001",
+      "event_type": "salary_credit",
+      "amount": 55000.0,
+      "metadata": {},
+      "source": "webhook",
+      "timestamp": "2026-06-20T07:50:45.255802Z",
+      "processed": false,
+      "agent_assigned": "margdarshan",
+      "processing_result": null,
+      "status": "pending",
+      "created_at": "2026-06-20T07:50:45.255824+00:00",
+      "updated_at": "2026-06-20T07:50:45.255824+00:00"
+    },
+    {
+      "event_id": "EVT-974778474ECD",
+      "customer_id": "CUST001",
+      "event_type": "salary_credit",
+      "amount": 55000.0,
+      "metadata": {},
+      "source": "webhook",
+      "timestamp": "2026-06-20T08:00:37.623295Z",
+      "processed": false,
+      "agent_assigned": "margdarshan",
+      "processing_result": null,
+      "status": "pending",
+      "created_at": "2026-06-20T08:00:37.623319+00:00",
+      "updated_at": "2026-06-20T08:00:37.623319+00:00"
+    }
+  ]
+}

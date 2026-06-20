@@ -1,47 +1,5 @@
-"""SAARTHI AI — Models package."""
-
-from backend.models.state import (
-    AgentType,
-    PersonaType,
-    EventType,
-    NetworkMode,
-    ConsentCategory,
-    IntentCategory,
-    GuardrailStatus,
-    Priority,
-    ConsentRecord,
-    ConsentStatus,
-    ConfidenceResult,
-    PersonaResult,
-    EventResult,
-    MemoryContext,
-    AuditEntry,
-    HumanInLoopAction,
-    AgentRequest,
-    AgentResponse,
-    SAARTHIState,
-    create_initial_state,
-)
-
-__all__ = [
-    "AgentType",
-    "PersonaType",
-    "EventType",
-    "NetworkMode",
-    "ConsentCategory",
-    "IntentCategory",
-    "GuardrailStatus",
-    "Priority",
-    "ConsentRecord",
-    "ConsentStatus",
-    "ConfidenceResult",
-    "PersonaResult",
-    "EventResult",
-    "MemoryContext",
-    "AuditEntry",
-    "HumanInLoopAction",
-    "AgentRequest",
-    "AgentResponse",
-    "SAARTHIState",
-    "create_initial_state",
-]
+"""
+SAARTHI AI — Models Package
+All Pydantic v2 models. These double as guardrail schemas —
+every LLM output and API I/O is validated through these models.
+"""

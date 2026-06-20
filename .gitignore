@@ -3,5 +3,15 @@ node_modules/
 .next/
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 __pycache__/
 *.pyc
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+chroma_db/
+*.log
