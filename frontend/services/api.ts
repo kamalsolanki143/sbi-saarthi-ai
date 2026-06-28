@@ -11,11 +11,10 @@ const useMock = () => process.env.NEXT_PUBLIC_USE_MOCK === 'true'
 export const api = {
   getCustomer: async (id: string) => {
     if (useMock()) return { data: MOCK_CUSTOMER }
-    return client.get(`/api/v1/customer/${id}`)
+    return client.get(`/customers/${id}`)
   },
   getTransactions: async (id: string) => {
-    if (useMock()) return { data: [] }
-    return client.get(`/api/v1/customer/${id}/transactions`)
+  return { data: [] }
   },
   processVoice: async (text: string, customerId: string, language: string) => {
     if (useMock()) return { data: { message_id: 'mock_' + Date.now() } }
@@ -31,7 +30,7 @@ export const api = {
   },
   getConsent: async (customerId: string) => {
     if (useMock()) return { data: [] }
-    return client.get(`/api/v1/consent/${customerId}`)
+    return client.get(`/consent/${customerId}`)
   },
   triggerEvent: async (customerId: string, eventType: string, payload: object) => {
     if (useMock()) return { data: { triggered: true } }
@@ -39,7 +38,7 @@ export const api = {
   },
   getRecommendations: async (id: string) => {
     if (useMock()) return { data: [{ id: 'rec_1', agent: 'margdarshan', text: 'Create a Fixed Deposit of ₹5,000 at 6.8% for 1 year', action: 'create_fd' }] }
-    return client.get(`/api/v1/recommendation/${id}`)
+    return client.get(`/recommendations/${id}`)
   },
   getAuditLogs: async (id: string) => {
     if (useMock()) return { data: [] }
