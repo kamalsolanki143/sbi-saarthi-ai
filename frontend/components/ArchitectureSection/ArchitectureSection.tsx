@@ -1,137 +1,243 @@
 'use client'
+
 import { motion } from 'framer-motion'
-import { Mic, Zap, Brain, ShieldCheck, Database, ArrowRight, Lock, Server, Globe, Layers } from 'lucide-react'
-
-const nodes = [
-  { icon: Mic, label: 'Voice Input', sub: 'Bhashini API', x: 8, y: 50 },
-  { icon: Globe, label: 'Language Layer', sub: 'Hindi / Bengali / Tamil', x: 22, y: 35 },
-  { icon: Layers, label: 'LangGraph', sub: 'Agent Orchestrator', x: 36, y: 50 },
-  { icon: Database, label: 'Shared Memory', sub: 'Redis + Vector DB', x: 50, y: 35 },
-  { icon: Brain, label: 'Agent Layer', sub: 'Mitra · Margdarshan · Saathi', x: 64, y: 50 },
-  { icon: Zap, label: 'Guardrails', sub: 'Confidence Engine', x: 78, y: 35 },
-  { icon: Lock, label: 'MPIN / Biometric', sub: 'Human-in-the-Loop', x: 92, y: 50 },
-]
-
-const lines = [
-  { from: { x: 14, y: 55 }, to: { x: 28, y: 40 } },
-  { from: { x: 28, y: 40 }, to: { x: 42, y: 52 } },
-  { from: { x: 42, y: 52 }, to: { x: 56, y: 40 } },
-  { from: { x: 56, y: 40 }, to: { x: 70, y: 52 } },
-  { from: { x: 70, y: 52 }, to: { x: 84, y: 40 } },
-  { from: { x: 84, y: 40 }, to: { x: 97, y: 52 } },
-]
+import {
+  Mic,
+  Languages,
+  Globe,
+  Brain,
+  Database,
+  Zap,
+  ShieldCheck,
+  Lock,
+  FileCheck,
+  Building2,
+  BarChart3,
+} from 'lucide-react'
 
 export default function ArchitectureSection() {
   return (
-    <section id="architecture" className="py-24 bg-[#0D1B2A] relative overflow-hidden">
+    <section
+      id="architecture"
+      className="relative overflow-hidden bg-[#0D1B2A] py-24"
+    >
       <div className="absolute inset-0 bg-grid opacity-20" />
-      <div className="relative z-10 max-w-7xl mx-auto px-6">
+
+      <div className="relative z-10 mx-auto max-w-7xl px-6">
+        {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 25 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.5 }}
-          className="text-center max-w-3xl mx-auto mb-16"
+          viewport={{ once: true }}
+          className="mx-auto mb-16 max-w-4xl text-center"
         >
-          <span className="text-accent text-sm font-medium tracking-wider uppercase">Technical Architecture</span>
-          <h2 className="text-3xl md:text-4xl font-bold text-white mt-3 tracking-tight">
-            Enterprise-Grade AI Infrastructure
+          <span className="text-sm font-medium uppercase tracking-wider text-blue-400">
+            SAARTHI Agent Architecture
+          </span>
+
+          <h2 className="mt-4 text-4xl font-bold text-white md:text-5xl">
+            How Customer Requests Become Secure Banking Actions
           </h2>
-          <p className="text-white/40 mt-4 leading-relaxed">
-            From voice input to secure execution — every layer is designed for scale, security, and India&apos;s diverse linguistic landscape.
+
+          <p className="mt-6 text-lg text-white/60">
+            From voice input to SBI-grade execution, every request passes
+            through language processing, agent collaboration, policy
+            validation, human approval, and compliance auditing.
           </p>
         </motion.div>
 
-        {/* Architecture diagram */}
-        <div className="relative max-w-5xl mx-auto">
-          {/* Connection lines */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100">
-            {lines.map((line, idx) => (
-              <motion.line
-                key={idx}
-                x1={line.from.x}
-                y1={line.from.y}
-                x2={line.to.x}
-                y2={line.to.y}
-                stroke="rgba(15,110,86,0.2)"
-                strokeWidth="0.3"
-                strokeDasharray="1,1"
-                initial={{ pathLength: 0 }}
-                whileInView={{ pathLength: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.15, duration: 0.6 }}
-              />
-            ))}
-          </svg>
+        {/* Voice Layer */}
+        <div className="mb-12">
+          <h3 className="mb-6 text-center text-2xl font-bold text-white">
+            VOICE LAYER
+          </h3>
 
-          {/* Nodes */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-            {nodes.map((node, idx) => {
-              const Icon = node.icon
+          <div className="grid gap-6 md:grid-cols-3">
+            {[
+              {
+                icon: Mic,
+                title: 'Voice Input',
+                desc: 'Customer voice & text requests',
+              },
+              {
+                icon: Languages,
+                title: 'Bhashini',
+                desc: 'Speech-to-Text & Language Detection',
+              },
+              {
+                icon: Globe,
+                title: 'Multilingual Layer',
+                desc: 'Hindi • Tamil • Bengali • English',
+              },
+            ].map((item) => {
+              const Icon = item.icon
+
               return (
-                <motion.div
-                  key={node.label}
-                  initial={{ opacity: 0, y: 15, scale: 0.9 }}
-                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: idx * 0.12, duration: 0.4 }}
-                  whileHover={{ y: -3, scale: 1.02 }}
-                  className="bg-white/[0.04] border border-white/10 rounded-xl p-4 text-center group hover:bg-white/[0.08] hover:border-accent/30 transition-all"
+                <div
+                  key={item.title}
+                  className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-2 group-hover:bg-accent/20 transition-colors">
-                    <Icon size={18} className="text-accent" />
-                  </div>
-                  <p className="text-xs font-medium text-white/80">{node.label}</p>
-                  <p className="text-[10px] text-white/30 mt-0.5">{node.sub}</p>
-                </motion.div>
+                  <Icon className="mb-4 h-10 w-10 text-blue-400" />
+                  <h4 className="font-semibold text-white">{item.title}</h4>
+                  <p className="mt-2 text-sm text-white/60">{item.desc}</p>
+                </div>
               )
             })}
           </div>
         </div>
 
-        {/* Tech stack */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-50px' }}
-          className="mt-16 grid md:grid-cols-3 gap-6"
-        >
-          {[
-            {
-              title: 'AI & Orchestration',
-              items: ['Google Gemini', 'LangGraph', 'LangChain', 'Confidence Engine'],
-            },
-            {
-              title: 'Voice & Language',
-              items: ['Bhashini API', 'Web Speech API', 'Hindi / Bengali / Tamil TTS', 'Noto Sans Devanagari'],
-            },
-            {
-              title: 'Security & Data',
-              items: ['Redis + Vector Memory', 'MPIN + Biometric Gate', 'Pydantic Validation', 'DPDP Compliant Audit'],
-            },
-          ].map((stack, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.1 }}
-              className="bg-white/[0.03] border border-white/5 rounded-xl p-5"
-            >
-              <h3 className="text-sm font-semibold text-white mb-3">{stack.title}</h3>
-              <div className="flex flex-wrap gap-2">
-                {stack.items.map((item) => (
-                  <span
-                    key={item}
-                    className="px-2.5 py-1 text-[11px] font-medium bg-white/5 text-white/50 rounded-md"
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+        {/* Orchestration Layer */}
+        <div className="mb-12">
+          <h3 className="mb-6 text-center text-2xl font-bold text-white">
+            ORCHESTRATION LAYER
+          </h3>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            {[
+              {
+                icon: Brain,
+                title: 'LangGraph',
+                desc: 'Routes requests & manages workflows',
+              },
+              {
+                icon: Database,
+                title: 'Shared Memory',
+                desc: 'Redis + Vector Database',
+              },
+              {
+                icon: Zap,
+                title: 'Event Engine',
+                desc: 'Triggers intelligent banking actions',
+              },
+            ].map((item) => {
+              const Icon = item.icon
+
+              return (
+                <div
+                  key={item.title}
+                  className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl"
+                >
+                  <Icon className="mb-4 h-10 w-10 text-cyan-400" />
+                  <h4 className="font-semibold text-white">{item.title}</h4>
+                  <p className="mt-2 text-sm text-white/60">{item.desc}</p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Multi-Agent Layer */}
+        <div className="mb-16">
+          <h3 className="mb-8 text-center text-3xl font-bold text-white">
+            MULTI-AGENT LAYER
+          </h3>
+
+          <div className="flex flex-col items-center gap-6">
+            <div className="w-full max-w-md rounded-3xl bg-gradient-to-r from-blue-600 to-cyan-500 p-8 text-center shadow-xl">
+              <div className="text-4xl">🧠</div>
+              <h4 className="mt-3 text-2xl font-bold text-white">MITRA</h4>
+              <p className="mt-2 text-white/90">Customer Acquisition</p>
+            </div>
+
+            <div className="text-3xl text-white/50">↓</div>
+
+            <div className="w-full max-w-md rounded-3xl bg-gradient-to-r from-purple-600 to-pink-500 p-8 text-center shadow-xl">
+              <div className="text-4xl">🛡️</div>
+              <h4 className="mt-3 text-2xl font-bold text-white">
+                MARGDARSHAN
+              </h4>
+              <p className="mt-2 text-white/90">Policy Intelligence</p>
+            </div>
+
+            <div className="text-3xl text-white/50">↓</div>
+
+            <div className="w-full max-w-md rounded-3xl bg-gradient-to-r from-orange-500 to-red-500 p-8 text-center shadow-xl">
+              <div className="text-4xl">⚡</div>
+              <h4 className="mt-3 text-2xl font-bold text-white">SAATHI</h4>
+              <p className="mt-2 text-white/90">Secure Execution</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Security Layer */}
+        <div className="mb-12">
+          <h3 className="mb-6 text-center text-2xl font-bold text-white">
+            SECURITY LAYER
+          </h3>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            {[
+              {
+                icon: ShieldCheck,
+                title: 'Confidence Engine',
+                desc: 'Risk validation & guardrails',
+              },
+              {
+                icon: Lock,
+                title: 'MPIN Approval',
+                desc: 'Human-in-the-loop confirmation',
+              },
+              {
+                icon: FileCheck,
+                title: 'Consent Manager',
+                desc: 'Explicit approval workflows',
+              },
+            ].map((item) => {
+              const Icon = item.icon
+
+              return (
+                <div
+                  key={item.title}
+                  className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl"
+                >
+                  <Icon className="mb-4 h-10 w-10 text-green-400" />
+                  <h4 className="font-semibold text-white">{item.title}</h4>
+                  <p className="mt-2 text-sm text-white/60">{item.desc}</p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Execution Layer */}
+        <div>
+          <h3 className="mb-6 text-center text-2xl font-bold text-white">
+            EXECUTION LAYER
+          </h3>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            {[
+              {
+                icon: Building2,
+                title: 'SBI Core Banking',
+                desc: 'FD, Loans, Transfers & Accounts',
+              },
+              {
+                icon: BarChart3,
+                title: 'Audit Trail',
+                desc: 'Complete decision logging',
+              },
+              {
+                icon: FileCheck,
+                title: 'DPDP Compliance',
+                desc: 'Privacy & regulatory compliance',
+              },
+            ].map((item) => {
+              const Icon = item.icon
+
+              return (
+                <div
+                  key={item.title}
+                  className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl"
+                >
+                  <Icon className="mb-4 h-10 w-10 text-orange-400" />
+                  <h4 className="font-semibold text-white">{item.title}</h4>
+                  <p className="mt-2 text-sm text-white/60">{item.desc}</p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
       </div>
     </section>
   )
