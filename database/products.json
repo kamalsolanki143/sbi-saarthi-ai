@@ -1,0 +1,66 @@
+{
+  "products": [
+    {
+      "product_id": "PROD001",
+      "name": "SBI Fixed Deposit",
+      "product_type": "fd",
+      "description": "Fixed Deposit with guaranteed returns. Safe and reliable savings instrument from SBI.",
+      "min_amount": 1000,
+      "max_amount": 10000000,
+      "tenures": ["7 days", "14 days", "1 month", "3 months", "6 months", "1 year", "2 years", "3 years", "5 years"],
+      "interest_rates": {
+        "7_days_to_45_days": 3.50,
+        "46_days_to_179_days": 4.75,
+        "180_days_to_1_year": 5.50,
+        "1_year_to_2_years": 6.80,
+        "2_years_to_3_years": 7.00,
+        "3_years_to_5_years": 6.50,
+        "5_years_to_10_years": 6.50,
+        "senior_citizen_additional": 0.50
+      },
+      "target_personas": ["salaried", "senior_citizen", "merchant", "farmer"],
+      "min_balance_required": 0,
+      "is_active": true
+    },
+    {
+      "product_id": "PROD002",
+      "name": "YONO SBI",
+      "product_type": "digital_banking",
+      "description": "You Only Need One — SBI's all-in-one digital banking platform. Manage everything from one app.",
+      "features": ["UPI payments", "Bill payments", "Account management", "Investment tracking", "Loan applications"],
+      "target_personas": ["salaried", "student", "merchant"],
+      "is_active": true
+    },
+    {
+      "product_id": "PROD003",
+      "name": "SBI UPI",
+      "product_type": "upi",
+      "description": "Instant money transfers using SBI's UPI service. Send and receive money 24x7.",
+      "target_personas": ["salaried", "student", "merchant", "farmer"],
+      "is_active": true
+    },
+    {
+      "product_id": "PROD004",
+      "name": "SBI Savings Account",
+      "product_type": "savings_account",
+      "description": "Basic savings account with zero minimum balance for Jan Dhan customers.",
+      "variants": ["Regular Savings", "Jan Dhan", "Basic Savings Bank Deposit"],
+      "interest_rate": 2.70,
+      "min_balance_regular": 3000,
+      "min_balance_jan_dhan": 0,
+      "target_personas": ["farmer", "student", "senior_citizen"],
+      "is_active": true
+    },
+    {
+      "product_id": "PROD005",
+      "name": "SBI Recurring Deposit",
+      "product_type": "rd",
+      "description": "Build savings habit with monthly deposits. Ideal for salaried customers.",
+      "min_monthly_amount": 100,
+      "tenure_range": "1 to 10 years",
+      "interest_rate": 6.50,
+      "target_personas": ["salaried", "student"],
+      "is_active": true
+    }
+  ]
+}
